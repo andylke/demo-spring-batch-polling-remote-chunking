@@ -12,8 +12,8 @@ import org.springframework.integration.dsl.IntegrationFlows;
 import org.springframework.integration.kafka.dsl.Kafka;
 import org.springframework.kafka.core.ConsumerFactory;
 
-import com.github.andylke.demo.support.PollingRemoteChunkingWorkerBuilder;
-import com.github.andylke.demo.support.RemoteChunkRequest;
+import com.github.andylke.demo.remotechunking.ChunkExecutionRequest;
+import com.github.andylke.demo.remotechunking.PollingRemoteChunkingWorkerBuilder;
 import com.github.andylke.demo.user.User;
 import com.github.andylke.demo.user.UserRepository;
 
@@ -29,7 +29,7 @@ public class ImportRandomUserWorkerStepConfig {
   @Bean
   public IntegrationFlow importRandomUserWorkerStep() {
     return workerBuilder
-        .remoteChunkTableSuffix("IMPORT_RANDOM_USER")
+        .chunkTableSuffix("IMPORT_RANDOM_USER")
         .inputChannel(importRandomUserWorkerRequestsChannel())
         .itemProcessor(randomUserToUserProcessor())
         .itemWriter(userRepositoryWriter())
@@ -58,7 +58,7 @@ public class ImportRandomUserWorkerStepConfig {
             Kafka.messageDrivenChannelAdapter(
                 consumerFactory,
                 ImportRandomUserManagerStepConfig.IMPORT_RANDOM_USER_REQUESTS_TOPIC))
-        .transform(source -> conversionService.convert(source, RemoteChunkRequest.class))
+        .transform(source -> conversionService.convert(source, ChunkExecutionRequest.class))
         .channel(importRandomUserWorkerRequestsChannel())
         .get();
   }

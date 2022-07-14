@@ -1,4 +1,4 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import org.springframework.batch.core.step.item.SimpleChunkProcessor;
 import org.springframework.batch.integration.chunk.ChunkProcessorChunkHandler;
@@ -14,22 +14,20 @@ public class PollingRemoteChunkingWorkerBuilder<I, O> {
 
   private static final String SERVICE_ACTIVATOR_METHOD_NAME = "handle";
 
-  private final RemoteChunkRepository remoteChunkRepository;
-
-  private String remoteChunkTableSuffix;
+  private final PollingRemoteChunkingRepository remoteChunkingRepository;
+  private String chunkTableSuffix;
 
   private ItemProcessor<I, O> itemProcessor;
   private ItemWriter<O> itemWriter;
   private MessageChannel inputChannel;
 
-  public PollingRemoteChunkingWorkerBuilder(RemoteChunkRepository remoteChunkRepository) {
-    this.remoteChunkRepository = remoteChunkRepository;
+  public PollingRemoteChunkingWorkerBuilder(PollingRemoteChunkingRepository chunkRepository) {
+    this.remoteChunkingRepository = chunkRepository;
   }
 
-  public PollingRemoteChunkingWorkerBuilder<I, O> remoteChunkTableSuffix(
-      String remoteChunkTableSuffix) {
-    Assert.hasText(remoteChunkTableSuffix, "remoteChunkTableSuffix must not be null or empty");
-    this.remoteChunkTableSuffix = remoteChunkTableSuffix;
+  public PollingRemoteChunkingWorkerBuilder<I, O> chunkTableSuffix(String chunkTableSuffix) {
+    Assert.hasText(chunkTableSuffix, "chunkTableSuffix must not be null or empty");
+    this.chunkTableSuffix = chunkTableSuffix;
     return this;
   }
 
@@ -68,11 +66,11 @@ public class PollingRemoteChunkingWorkerBuilder<I, O> {
     SimpleChunkProcessor<I, O> chunkProcessor =
         new SimpleChunkProcessor<>(itemProcessor, itemWriter);
 
-    RemoteChunkHandler<I> chunkHandler =
-        new RemoteChunkHandler<>(remoteChunkTableSuffix, remoteChunkRepository, chunkProcessor);
+    ChunkExecutionRequestHandler<I> chunkExecutionRequestHandler =
+        new ChunkExecutionRequestHandler<>(chunkTableSuffix, remoteChunkingRepository, chunkProcessor);
 
     return IntegrationFlows.from(inputChannel)
-        .handle(chunkHandler, SERVICE_ACTIVATOR_METHOD_NAME)
+        .handle(chunkExecutionRequestHandler, SERVICE_ACTIVATOR_METHOD_NAME)
         .get();
   }
 }

@@ -1,29 +1,29 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.transaction.PlatformTransactionManager;
 
 public class PollingRemoteChunkingManagerStepBuilderFactory {
 
-  private RemoteChunkRepository remoteChunkRepository;
+  private PollingRemoteChunkingRepository remoteChunkingRepository;
 
   private JobRepository jobRepository;
 
   private PlatformTransactionManager transactionManager;
 
   public PollingRemoteChunkingManagerStepBuilderFactory(
-      RemoteChunkRepository remoteChunkRepository,
+      PollingRemoteChunkingRepository remoteChunkingRepository,
       JobRepository jobRepository,
       PlatformTransactionManager platformTransactionManager) {
 
-    this.remoteChunkRepository = remoteChunkRepository;
+    this.remoteChunkingRepository = remoteChunkingRepository;
     this.jobRepository = jobRepository;
     this.transactionManager = platformTransactionManager;
   }
 
-  public <I, O> PollingRemoteChunkingManagerStepBuilder<I, O> get(String name) {
-    return new PollingRemoteChunkingManagerStepBuilder<I, O>(name)
-        .remoteChunkRepository(remoteChunkRepository)
+  public <T> PollingRemoteChunkingManagerStepBuilder<T> get(String name) {
+    return new PollingRemoteChunkingManagerStepBuilder<T>(name)
+        .pollingRemoteChunkingRepository(remoteChunkingRepository)
         .repository(jobRepository)
         .transactionManager(transactionManager);
   }

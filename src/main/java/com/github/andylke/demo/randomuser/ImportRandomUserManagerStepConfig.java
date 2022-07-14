@@ -1,5 +1,7 @@
 package com.github.andylke.demo.randomuser;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.admin.NewTopic;
@@ -10,6 +12,9 @@ import org.springframework.batch.item.data.builder.RepositoryItemReaderBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.integration.channel.DirectChannel;
@@ -19,7 +24,8 @@ import org.springframework.integration.kafka.dsl.Kafka;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.KafkaTemplate;
 
-import com.github.andylke.demo.support.PollingRemoteChunkingManagerStepBuilderFactory;
+import com.github.andylke.demo.remotechunking.PagingItemReader;
+import com.github.andylke.demo.remotechunking.PollingRemoteChunkingManagerStepBuilderFactory;
 
 @Configuration
 public class ImportRandomUserManagerStepConfig {
@@ -39,13 +45,29 @@ public class ImportRandomUserManagerStepConfig {
   @Bean
   public Step importRandomUserManagerStep() {
     return stepBuilderFactory
-        .get("importRandomUser")
-        .remoteChunkTableSuffix("IMPORT_RANDOM_USER")
+        .<RandomUser>get("importRandomUser")
         .chunk(properties.getChunkSize())
+        .chunkTableSuffix("IMPORT_RANDOM_USER")
+        .chunkReader(randomUserChunkReader())
+        .pollInterval(Duration.ofSeconds(5))
+        .pollTimeout(Duration.ofSeconds(20))
         .reader(randomUserRepositoryReader())
         .outputChannel(importRandomUserMasterRequestsChannel())
         .throttleLimit(properties.getThrottleLimit())
         .build();
+  }
+
+  @Bean
+  public PagingItemReader<? extends RandomUser> randomUserChunkReader() {
+    return new PagingItemReader<RandomUser>() {
+
+      @Override
+      public List<RandomUser> readPage(int page, int pageSize) {
+        Page<RandomUser> pageResult =
+            randomUserRepository.findAll(PageRequest.of(page, pageSize, Sort.by("id")));
+        return pageResult.getContent();
+      }
+    };
   }
 
   @Bean

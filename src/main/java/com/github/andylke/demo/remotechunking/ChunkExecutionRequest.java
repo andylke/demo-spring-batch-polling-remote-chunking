@@ -1,11 +1,11 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.List;
 
 import org.springframework.batch.core.StepContribution;
 
-public class RemoteChunkRequest<T> implements Serializable {
+public class ChunkExecutionRequest<T> implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -15,15 +15,15 @@ public class RemoteChunkRequest<T> implements Serializable {
 
   private final Long sequence;
 
-  private final Collection<? extends T> items;
+  private final List<? extends T> items;
 
   private final StepContribution stepContribution;
 
-  public RemoteChunkRequest(
+  public ChunkExecutionRequest(
       Long jobExecutionId,
       Long stepExecutionId,
       Long sequence,
-      Collection<? extends T> items,
+      List<? extends T> items,
       StepContribution stepContribution) {
     this.jobExecutionId = jobExecutionId;
     this.stepExecutionId = stepExecutionId;
@@ -44,7 +44,7 @@ public class RemoteChunkRequest<T> implements Serializable {
     return sequence;
   }
 
-  public Collection<? extends T> getItems() {
+  public List<? extends T> getItems() {
     return items;
   }
 

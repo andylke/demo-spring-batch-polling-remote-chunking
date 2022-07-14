@@ -1,4 +1,4 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import java.io.IOException;
 
@@ -14,13 +14,13 @@ class PollingRemoteChunkingWorkerConfiguration {
   private final DefaultDeserializer deserializer = new DefaultDeserializer();
 
   @Bean
-  public Converter<byte[], RemoteChunkRequest<?>> byteArrayToRemoteChunkRequestConverter() {
-    return new Converter<byte[], RemoteChunkRequest<?>>() {
+  public Converter<byte[], ChunkExecutionRequest<?>> byteArrayToRemoteChunkRequestConverter() {
+    return new Converter<byte[], ChunkExecutionRequest<?>>() {
 
       @Override
-      public RemoteChunkRequest<?> convert(byte[] source) {
+      public ChunkExecutionRequest<?> convert(byte[] source) {
         try {
-          return (RemoteChunkRequest<?>) deserializer.deserializeFromByteArray(source);
+          return (ChunkExecutionRequest<?>) deserializer.deserializeFromByteArray(source);
         } catch (IOException e) {
           throw new ConversionException("", e);
         }
@@ -30,7 +30,7 @@ class PollingRemoteChunkingWorkerConfiguration {
 
   @Bean
   public <I, O> PollingRemoteChunkingWorkerBuilder<I, O> pollingRemoteChunkingWorkerBuilder(
-      RemoteChunkRepository remoteChunkRepository) {
+      PollingRemoteChunkingRepository remoteChunkRepository) {
     return new PollingRemoteChunkingWorkerBuilder<I, O>(remoteChunkRepository);
   }
 }

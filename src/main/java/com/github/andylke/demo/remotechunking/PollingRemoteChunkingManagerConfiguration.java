@@ -1,4 +1,4 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import java.io.IOException;
 
@@ -18,7 +18,7 @@ class PollingRemoteChunkingManagerConfiguration {
   @Bean
   public PollingRemoteChunkingManagerStepBuilderFactory
       pollingRemoteChunkingManagerStepBuilderFactory(
-          RemoteChunkRepository remoteChunkRepository,
+          PollingRemoteChunkingRepository remoteChunkRepository,
           JobRepository jobRepository,
           PlatformTransactionManager transactionManager) {
     return new PollingRemoteChunkingManagerStepBuilderFactory(
@@ -26,11 +26,11 @@ class PollingRemoteChunkingManagerConfiguration {
   }
 
   @Bean
-  public Converter<RemoteChunkRequest<?>, byte[]> remoteChunkRequestToByteArrayConverter() {
-    return new Converter<RemoteChunkRequest<?>, byte[]>() {
+  public Converter<ChunkExecutionRequest<?>, byte[]> remoteChunkRequestToByteArrayConverter() {
+    return new Converter<ChunkExecutionRequest<?>, byte[]>() {
 
       @Override
-      public byte[] convert(RemoteChunkRequest<?> source) {
+      public byte[] convert(ChunkExecutionRequest<?> source) {
         try {
           return serializer.serializeToByteArray(source);
         } catch (IOException e) {

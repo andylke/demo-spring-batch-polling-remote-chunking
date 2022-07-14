@@ -1,4 +1,4 @@
-package com.github.andylke.demo.support;
+package com.github.andylke.demo.remotechunking;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -10,7 +10,7 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.util.Assert;
 
 @SuppressWarnings("serial")
-public class RemoteChunkExecution implements Serializable {
+public class ChunkExecution implements Serializable {
 
   private final Long stepExecutionId;
 
@@ -24,8 +24,6 @@ public class RemoteChunkExecution implements Serializable {
 
   private volatile int itemCount = 0;
 
-  private volatile int completedCount = 0;
-
   private volatile int sentCount = 0;
 
   private volatile int receivedCount = 0;
@@ -34,7 +32,7 @@ public class RemoteChunkExecution implements Serializable {
 
   private volatile Date lastUpdated = null;
 
-  public RemoteChunkExecution(Long stepExecutionId, Long sequence) {
+  public ChunkExecution(Long stepExecutionId, Long sequence) {
     Assert.notNull(stepExecutionId, "StepExecutionId must not be null");
     Assert.notNull(sequence, "Sequence must not be null");
 
@@ -80,14 +78,6 @@ public class RemoteChunkExecution implements Serializable {
 
   public void setItemCount(int itemCount) {
     this.itemCount = itemCount;
-  }
-
-  public int getCompletedCount() {
-    return completedCount;
-  }
-
-  public void setCompletedCount(int completedCount) {
-    this.completedCount = completedCount;
   }
 
   public int getSentCount() {
