@@ -10,7 +10,6 @@ import java.util.Set;
 import org.springframework.batch.core.step.item.BatchRetryTemplate;
 import org.springframework.batch.core.step.item.FaultTolerantChunkProcessor;
 import org.springframework.batch.core.step.item.ForceRollbackForWriteSkipException;
-import org.springframework.batch.integration.chunk.ChunkProcessorChunkHandler;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.support.PassThroughItemProcessor;
@@ -76,21 +75,53 @@ public class PollingRemoteChunkingWorkerBuilder<I, O> {
     return this;
   }
 
+  /**
+   * The maximum number of times to try a failed item. Zero and one both translate to try only once
+   * and do not retry. Ignored if an explicit {@link #retryPolicy} is set.
+   *
+   * @param retryLimit the retry limit (default 0)
+   * @return this for fluent chaining
+   */
   public PollingRemoteChunkingWorkerBuilder<I, O> retryLimit(int retryLimit) {
     this.retryLimit = retryLimit;
     return this;
   }
 
+  /**
+   * Provide an explicit retry policy instead of using the {@link #retryLimit(int)} and retryable
+   * exceptions provided elsewhere. Can be used to retry different exceptions a different number of
+   * times, for instance.
+   *
+   * @param retryPolicy a retry policy
+   * @return this for fluent chaining
+   */
   public PollingRemoteChunkingWorkerBuilder<I, O> retryPolicy(RetryPolicy retryPolicy) {
     this.retryPolicy = retryPolicy;
     return this;
   }
 
+  /**
+   * Provide a backoff policy to prevent items being retried immediately (e.g. in case the failure
+   * was caused by a remote resource failure that might take some time to be resolved). Ignored if
+   * an explicit {@link #retryPolicy} is set.
+   *
+   * @param backOffPolicy the back off policy to use (default no backoff)
+   * @return this for fluent chaining
+   */
   public PollingRemoteChunkingWorkerBuilder<I, O> backOffPolicy(BackOffPolicy backOffPolicy) {
     this.backOffPolicy = backOffPolicy;
     return this;
   }
 
+  /**
+   * Provide an explicit retry context cache. Retry is stateful across transactions in the case of
+   * failures in item processing or writing, so some information about the context for subsequent
+   * retries has to be stored.
+   *
+   * @param retryContextCache cache for retry contexts in between transactions (default to standard
+   *     in-memory implementation)
+   * @return this for fluent chaining
+   */
   public PollingRemoteChunkingWorkerBuilder<I, O> retryContextCache(
       RetryContextCache retryContextCache) {
     this.retryContextCache = retryContextCache;
@@ -98,12 +129,28 @@ public class PollingRemoteChunkingWorkerBuilder<I, O> {
   }
 
   /**
-   * Create an {@link IntegrationFlow} with a {@link ChunkProcessorChunkHandler} configured as a
-   * service activator listening to the input channel and replying on the output channel.
+   * Explicitly ask for an exception (and subclasses) to be excluded from retry.
    *
-   * @return the integration flow
+   * @param type the exception to exclude from retry
+   * @return this for fluent chaining
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  public PollingRemoteChunkingWorkerBuilder<I, O> noRetry(Class<? extends Throwable> type) {
+    retryableExceptionClasses.put(type, false);
+    return this;
+  }
+
+  /**
+   * Explicitly ask for an exception (and subclasses) to be retried.
+   *
+   * @param type the exception to retry
+   * @return this for fluent chaining
+   */
+  public PollingRemoteChunkingWorkerBuilder<I, O> retry(Class<? extends Throwable> type) {
+    retryableExceptionClasses.put(type, true);
+    return this;
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public IntegrationFlow build() {
     Assert.notNull(itemWriter, "An ItemWriter must be provided");
     Assert.notNull(inputChannel, "An InputChannel must be provided");
