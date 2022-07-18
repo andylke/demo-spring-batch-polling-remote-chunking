@@ -59,7 +59,7 @@ create table `user` (
   email varchar(200) not null,
   address varchar(200) null,
   city varchar(200) null,
-  country varchar(12) null,
+  country varchar(200) null,
   postcode varchar(20) null,
   coordinates varchar(200) null,
   timezone varchar(200) null,

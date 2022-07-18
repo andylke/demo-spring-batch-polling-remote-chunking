@@ -4,16 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.ExitStatus;
-import org.springframework.batch.core.JobInterruptedException;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.step.item.Chunk;
 import org.springframework.batch.core.step.item.ChunkProcessor;
-import org.springframework.batch.core.step.item.FaultTolerantChunkProcessor;
-import org.springframework.batch.core.step.skip.NonSkippableReadException;
-import org.springframework.batch.core.step.skip.SkipLimitExceededException;
-import org.springframework.batch.core.step.skip.SkipListenerFailedException;
 import org.springframework.integration.annotation.ServiceActivator;
-import org.springframework.retry.RetryException;
 import org.springframework.util.Assert;
 
 public class ChunkExecutionRequestHandler<T> {
@@ -65,7 +59,6 @@ public class ChunkExecutionRequestHandler<T> {
       chunkExecution.setExitStatus(ExitStatus.FAILED.addExitDescription(failure));
       chunkExecution.setStatus(BatchStatus.FAILED);
       pollingRemoteChunkingRepository.updateChunkExecution(chunkTableSuffix, chunkExecution);
-      LOGGER.debug("Failed chunk", failure);
     } else {
       chunkExecution.setExitStatus(ExitStatus.COMPLETED);
       chunkExecution.setStatus(BatchStatus.COMPLETED);
@@ -84,23 +77,15 @@ public class ChunkExecutionRequestHandler<T> {
     Throwable failure = null;
     try {
       chunkProcessor.process(stepContribution, chunk);
-    } catch (SkipLimitExceededException e) {
-      failure = e;
-    } catch (NonSkippableReadException e) {
-      failure = e;
-    } catch (SkipListenerFailedException e) {
-      failure = e;
-    } catch (RetryException e) {
-      failure = e;
-    } catch (JobInterruptedException e) {
-      failure = e;
     } catch (Exception e) {
-      if (chunkProcessor instanceof FaultTolerantChunkProcessor<?, ?>) {
-        // try again...
-        throw e;
-      } else {
-        failure = e;
-      }
+      LOGGER.error(
+          "Failed processing for step execution id ["
+              + chunkExecutionRequest.getStepExecutionId()
+              + "], chunk sequence ["
+              + chunkExecutionRequest.getSequence()
+              + "]",
+          e);
+      failure = e;
     }
 
     return failure;
